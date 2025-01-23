@@ -23,9 +23,36 @@ app.get('/login', (req, res) => {
 
 //profile route
 
-app.get('/profile',isLogin, (req, res) => {
-  res.render('login');
+
+
+app.get('/profile', isLogin, async (req, res) => {
+  let user = await userModel.findOne({ email: req.user.email }).populate('posts');
+  res.render('profile', { user, posts: user.posts });
 });
+
+
+
+//post route
+app.post('/post', isLogin, async (req, res) => {
+  let user = await userModel.findOne({ email: req.user.email });
+  let{content} = req.body;
+  console.log(content);
+
+let post = await postModel.create({
+    user: user._id,
+    content
+    
+})
+  user.posts.push(post._id);
+  await user.save();
+  res.redirect('/profile');
+
+
+});
+
+
+
+
 
 //logout route
 
@@ -76,7 +103,7 @@ app.post('/login', async (req, res) => {
     if (result) {
       let token = jwt.sign({ email: email, userid: user._id }, "ronaldo");
       res.cookie('token', token);
-      res.send("Login Successfully");
+      res.redirect("/profile");
     } else {
       res.redirect('/login')
     }
@@ -84,7 +111,7 @@ app.post('/login', async (req, res) => {
 })
 
 function isLogin(req, res, next) {
-  if (req.cookies.token === "") return res.send('You must be login');
+  if (req.cookies.token === "") return res.redirect('/login');
   else {
     let data = jwt.verify(req.cookies.token, "ronaldo");
     req.user = data;
