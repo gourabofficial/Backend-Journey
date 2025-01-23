@@ -24,19 +24,24 @@ app.get('/login', (req, res) => {
 //profile route
 
 
-
 app.get('/profile', isLogin, async (req, res) => {
-  let user = await userModel.findOne({ email: req.user.email }).populate('posts');
+  let user =  await userModel.findOne({ email: req.user.email }).populate({
+    path: 'posts',
+    populate: { path: 'user', select: 'username' }, 
+  });
+
   res.render('profile', { user, posts: user.posts });
 });
 
 
 
 //post route
+
 app.post('/post', isLogin, async (req, res) => {
   let user = await userModel.findOne({ email: req.user.email });
   let{content} = req.body;
   console.log(content);
+  console.log(user);
 
 let post = await postModel.create({
     user: user._id,
@@ -49,10 +54,6 @@ let post = await postModel.create({
 
 
 });
-
-
-
-
 
 //logout route
 
