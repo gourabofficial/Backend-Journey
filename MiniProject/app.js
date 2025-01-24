@@ -60,6 +60,32 @@ app.post('/update/:id', async (req, res) => {
 
 });
 
+// delete user post
+
+app.post('/delete/:id', async (req, res) => {
+  try {
+
+    const post = await postModel.findByIdAndDelete(req.params.id);
+
+    if (!post) {
+      return res.status(404).send('Post not found'); 
+    }
+
+    await userModel.updateOne(
+      { _id: post.user }, 
+      { $pull: { posts: post._id } } 
+    );
+
+    res.redirect('/profile'); 
+  } catch (err) {
+    console.error('Error deleting post:', err);
+    res.status(500).send('Internal Server Error'); 
+  }
+});
+
+
+
+
 //post route
 app.post('/post', isLogin, async (req, res) => {
   let user = await userModel.findOne({ email: req.user.email });
