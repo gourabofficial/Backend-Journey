@@ -13,22 +13,21 @@ app.set('view engine', 'ejs');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, './public/upload/images')
+    cb(null, './uploads')
   },
   filename: function (req, file, cb) {
-    crypto.randomBytes(12, function (err, bytes) {
-        const fn = bytes.toString('hex') + path.extname(file.originalname );
-      cb(null, fn);
-    })
+    cb(null, `${Date.now()}-${file.originalname}`);
+    
   }
 })
 
 const upload = multer({ storage: storage })
 
-
-app.post('/upload',upload.single("image"), (req, res) => {
-  console.log(req.file);
+app.post('/upload', upload.single("file"), (req, res) => {
+  console.log(req.file)
+  res.redirect('/');
 });
+
 
 
 app.get('/', (req, res) => {
