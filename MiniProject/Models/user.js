@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-mongoose.connect(`mongodb+srv://jeetkoner:jeet123@cluster0.ljyr1.mongodb.net/`);
+mongoose.connect(`mongodb://127.0.0.1:27017/Miniproject`);
 
 const userSchema = mongoose.Schema({
 
