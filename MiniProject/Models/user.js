@@ -1,13 +1,22 @@
 const mongoose = require('mongoose');
 
-mongoose.connect(`mongodb://127.0.0.1:27017/miniproject`);
+mongoose.connect(`mongodb+srv://jeetkoner:jeet123@cluster0.ljyr1.mongodb.net/`);
 
 const userSchema = mongoose.Schema({
 
-  username: String,
-  name: String,
+  username: {
+    type: String,
+    required: true,
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true
+  },
   age: Number,
-  email: String,
   password: String,
   posts: [
     {

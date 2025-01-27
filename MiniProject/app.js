@@ -23,9 +23,9 @@ app.get('/login', (req, res) => {
 
 //profile route
 app.get('/profile', isLogin, async (req, res) => {
-  let user =  await userModel.findOne({ email: req.user.email }).populate({
+  let user = await userModel.findOne({ email: req.user.email }).populate({
     path: 'posts',
-    populate: { path: 'user', select: 'username' }, 
+    populate: { path: 'user', select: 'username' },
   });
 
   res.render('profile', { user, posts: user.posts });
@@ -44,7 +44,7 @@ app.get('/like/:id', isLogin, async (req, res) => {
   }
   await post.save();
   res.redirect('/profile');
-  });
+});
 
 // edit user route
 app.get('/edit/:id', async (req, res) => {
@@ -55,7 +55,7 @@ app.get('/edit/:id', async (req, res) => {
 
 // update user route
 app.post('/update/:id', async (req, res) => {
-  let post = await postModel.findOne({ _id: req.params.id },{content:req.body.content});
+  let post = await postModel.findOne({ _id: req.params.id }, { content: req.body.content });
   res.redirect('/profile');
 
 });
@@ -68,18 +68,18 @@ app.post('/delete/:id', async (req, res) => {
     const post = await postModel.findByIdAndDelete(req.params.id);
 
     if (!post) {
-      return res.status(404).send('Post not found'); 
+      return res.status(404).send('Post not found');
     }
 
     await userModel.updateOne(
-      { _id: post.user }, 
-      { $pull: { posts: post._id } } 
+      { _id: post.user },
+      { $pull: { posts: post._id } }
     );
 
-    res.redirect('/profile'); 
+    res.redirect('/profile');
   } catch (err) {
     console.error('Error deleting post:', err);
-    res.status(500).send('Internal Server Error'); 
+    res.status(500).send('Internal Server Error');
   }
 });
 
@@ -89,15 +89,15 @@ app.post('/delete/:id', async (req, res) => {
 //post route
 app.post('/post', isLogin, async (req, res) => {
   let user = await userModel.findOne({ email: req.user.email });
-  let{content} = req.body;
+  let { content } = req.body;
   console.log(content);
   console.log(user);
 
-let post = await postModel.create({
+  let post = await postModel.create({
     user: user._id,
     content
-    
-})
+
+  })
   user.posts.push(post._id);
   await user.save();
   res.redirect('/profile');
@@ -114,30 +114,46 @@ app.get('/logout', (req, res) => {
 
 
 app.post('/register', async (req, res) => {
-  let { email, password, username, name, age } = req.body;
+  try {
+    let { email, password, name, age } = req.body;
+    let username = req.body.username || req.body.UserName; 
+    console.log({ email, password, username, name, age }); 
 
-  let user = await userModel.findOne({ email });
-  if (user) {
-    return res.status(400).send('User already exists');
+    if (!email || !password || !username || !name || !age) {
+      return res.status(400).send('All fields are required');
+    }
+
+    let user = await userModel.findOne({ email });
+    if (user) {
+      return res.status(400).send('User already exists');
+    }
+
+    bcrypt.genSalt(10, (err, salt) => {
+      if (err) return res.status(500).send('Error generating salt');
+
+      bcrypt.hash(password, salt, async (err, hash) => {
+        if (err) return res.status(500).send('Error hashing password');
+
+        let user = await userModel.create({
+          email,
+          name,
+          username,
+          age,
+          password: hash,
+        });
+
+        let token = jwt.sign({ email: email, userid: user._id }, "ronaldo");
+        res.cookie('token', token);
+        res.status(201).send("Registered Successfully");
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
   }
-
-  bcrypt.genSalt(10, (err, salt) => {
-    bcrypt.hash(password, salt, async (err, hash) => {
-      let user = await userModel.create({
-        email,
-        name,
-        username,
-        age,
-        password: hash,
-      })
-
-      let token = jwt.sign({ email: email, userid: user._id }, "ronaldo");
-      res.cookie('token', token);
-      res.send("Registerd Successfully");
-
-    })
-  });
 });
+
+
 
 // login route 
 app.post('/login', async (req, res) => {
